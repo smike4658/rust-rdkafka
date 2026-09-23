@@ -232,7 +232,15 @@ fn build_librdkafka() {
         .define("CMAKE_INSTALL_LIBDIR", "lib")
         // CMake 4.0.0 drops support for 3.2 compatibility, which is
         // required by librdkafka 2.3.0.
-        .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5");
+        .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
+        // Snappy is bundled with librdkafka (src/snappy.c is always compiled),
+        // so it has no Cargo feature. But on Windows librdkafka's CMake build
+        // defaults WITHOUT_WIN32_CONFIG=ON and then passes
+        // -DWITH_SNAPPY=${WITH_SNAPPY} -- a variable nothing sets -- so the
+        // snappy arm of the decompressor was compiled out and every fetch
+        // from a snappy topic failed with "Local: Not implemented".
+        // Elsewhere config.h hardcodes WITH_SNAPPY 1, so this is a no-op.
+        .define("WITH_SNAPPY", "1");
 
     if env::var("CARGO_FEATURE_LIBZ").is_ok() {
         config.define("WITH_ZLIB", "1");
